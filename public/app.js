@@ -10,7 +10,7 @@ function cardEl(card, selectable=false){const el=document.createElement("div");e
 function renderHand(){const host=$("myCards");host.innerHTML="";(state?.hand||[]).forEach(c=>host.appendChild(cardEl(c,true)));$("playCards").disabled=!state||state.phase!=="playing"||state.currentPlayerId!==myPlayerId||selected.size===0;$("passTurn").disabled=!state||state.phase!=="playing"||state.currentPlayerId!==myPlayerId||!state.lastPlay||state.lastPlay.playerId===myPlayerId;}
 function renderState(s){state=s;if(s.code)roomCode=s.code;if(s.players?.some(p=>p.isYou))myPlayerId=s.players.find(p=>p.isYou).id;
  if(s.phase==="lobby"){show("lobby");$("createdCode").textContent=s.code;$("startPrivate").classList.toggle("hidden",!s.players.some(p=>p.isYou&&p.seat===0));$("lobbyPlayers").innerHTML=s.players.map(p=>`<div class="player-row"><span>${escapeHtml(p.name)}${p.isYou?" (you)":""}</span><span>${p.connected?"● Connected":"○ Disconnected"}</span></div>`).join("");return;}
- if(s.phase==="countdown"){show("waiting");$("waitingTitle").textContent="Table found!";$("waitingText").textContent="Your game is starting…";$("queueCount").textContent="4";return;}
+ if(s.phase==="countdown"){show("waiting");$("waitingTitle").textContent="Table found!";$("waitingText").textContent="Your game is starting…";$("queueCount").textContent=String((s.players||[]).length);return;}
  show("game");$("tableCode").textContent=s.code||"";$("gameStatus").textContent=s.phase==="ended"?(s.winner?`${s.winner.name} wins!`:"Game ended"):s.phase==="playing"?(s.currentPlayerId===myPlayerId?"Your turn":"Game in progress"):"Connecting…";
  $("tableMessage").textContent=s.message||"";$("turnStatus").textContent=s.phase==="ended"?"Round complete":s.currentPlayerId===myPlayerId?"Your turn — choose your cards":`${s.players.find(p=>p.id===s.currentPlayerId)?.name||"A player"} is thinking`;
  const opp=$("opponents");opp.innerHTML="";const others=(s.players||[]).filter(p=>!p.isYou);others.forEach(p=>{const d=document.createElement("div");d.className="opponent"+(p.id===s.currentPlayerId?" active":"");d.innerHTML=`<div class="avatar">${escapeHtml(p.name.slice(0,1).toUpperCase())}</div><div class="name">${escapeHtml(p.name)}</div><div class="count">${p.cardCount} cards · ${p.connected?"online":"reconnecting"}</div>`;opp.appendChild(d);});
@@ -47,7 +47,7 @@ socket.on("queue:joined",d=>{
   inQueue=true;
   $("waitingText").textContent="You’re in the queue (position "+d.position+"). Waiting for more players; 2+ players can start after 20 seconds.";
 });
-socket.on("match:found",d=>{inQueue=false;roomCode=d.code;myPlayerId=socket.id;show("waiting");$("waitingTitle").textContent="Table found!";$("waitingText").textContent="Your match is ready. Dealing cards…";$("queueCount").textContent="4";});
+socket.on("match:found",d=>{inQueue=false;roomCode=d.code;myPlayerId=socket.id;show("waiting");$("waitingTitle").textContent="Table found!";$("waitingText").textContent="Your match is ready. Dealing cards…";$("queueCount").textContent=String((d.players||[]).length);});
 socket.on("room:created",d=>{roomCode=d.code;toast("Private room created. Share the code with friends.");});
 socket.on("game:state",renderState);
 socket.on("game:error",msg=>toast(msg,"error"));
