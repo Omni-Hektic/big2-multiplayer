@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#092b22">
+<title>Big 2 — Quick Match</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="shell">
+<header class="topbar"><a class="brand" href="/"><span class="brand-mark">♠</span><span>BIG <b>TWO</b><small>ONLINE CARD TABLE</small></span></a><div class="online"><i></i> LIVE MULTIPLAYER</div></header>
+<main>
+<section id="home" class="panel home">
+<div class="eyebrow">THE CLASSIC CARD GAME. RECONNECTED.</div>
+<h1>Play Big 2.<br><em>Meet your next rivals.</em></h1>
+<p class="intro">Join a table with players from anywhere. No invites needed.</p>
+<label for="playerName">YOUR DISPLAY NAME</label><input id="playerName" maxlength="18" placeholder="Choose a name" autocomplete="nickname">
+<div class="actions"><button id="quickMatch" class="primary">♣ &nbsp; Quick Match</button><button id="createPrivate" class="secondary">Create private room</button><button id="showPrivate" class="secondary">Join with code</button></div>
+<div id="joinPrivate" class="private-join hidden"><input id="roomCode" maxlength="5" placeholder="ROOM CODE"><button id="joinRoom" class="secondary">Join room</button></div>
+<div class="features"><span>♠ 4 players per table</span><span>♣ Free to play</span><span>♥ No app required</span></div>
+</section>
+<section id="waiting" class="panel waiting hidden">
+<div class="spinner"></div><div class="eyebrow">QUICK MATCHMAKING</div><h2 id="waitingTitle">Finding your table…</h2><p id="waitingText">Looking for players to join your game.</p><div class="queue-meter"><span id="queueCount">0</span><span> / 4 players found</span></div><button id="cancelQueue" class="secondary">Cancel search</button>
+</section>
+<section id="lobby" class="panel hidden">
+<div class="eyebrow">PRIVATE TABLE</div><h2>Waiting for players</h2><p>Share this code with friends.</p><div class="room-code" id="createdCode">-----</div><button id="copyInvite" class="secondary">Copy invitation link</button>
+<div id="lobbyPlayers" class="player-list"></div><button id="startPrivate" class="primary">Start game</button><button id="leaveLobby" class="text-button">Leave room</button>
+</section>
+<section id="game" class="game hidden">
+<div class="game-header"><div><div class="eyebrow">TABLE <span id="tableCode"></span></div><h2 id="gameStatus">Waiting for players</h2></div><button id="rulesButton" class="secondary small">Rules</button></div>
+<div class="table">
+<div class="opponents" id="opponents"></div>
+<div class="center-play"><div class="table-label">CURRENT PLAY</div><div id="currentPlay" class="played-cards"><span class="muted">The table is clear</span></div><div id="tableMessage" class="table-message">Waiting for the first play…</div></div>
+<div id="mySeat" class="my-seat"><div class="you-label">YOUR HAND</div><div id="myCards" class="my-cards"></div><div class="game-actions"><button id="playCards" class="primary" disabled>Play selected cards</button><button id="passTurn" class="secondary" disabled>Pass</button></div></div>
+</div>
+<div class="below-table"><span id="turnStatus">Connecting…</span><button id="leaveGame" class="text-button">Leave game</button></div>
+<div id="endActions" class="end-actions hidden"><button id="rematch" class="primary">Play again</button><button id="backHome" class="secondary">Main menu</button></div>
+</section>
+<section id="rules" class="panel hidden"><div class="eyebrow">HOW TO PLAY</div><h2>Big 2 rules</h2><p>Be the first to play all 13 cards in your hand.</p><ul><li>Card ranks go 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, A, 2.</li><li>Suit order: diamonds, clubs, hearts, spades.</li><li>Play a single, pair, triple, or valid five-card poker combination.</li><li>Beat the previous play with the same number of cards, or pass.</li><li>When everyone else passes, the last player to play leads the next trick.</li><li>The first play of the round must include the 3♦.</li></ul><p class="note">This version uses a simplified, documented ranking: straight flush, four of a kind, full house, flush, straight. Local Big 2 variants may differ.</p><button id="closeRules" class="primary">Back to game</button></section>
+</main>
+<footer>BIG TWO ONLINE <span>•</span> MADE FOR FRIENDS, NEAR OR FAR</footer>
+</div>
+<div id="toast" class="toast hidden"></div>
+<script src="/socket.io/socket.io.js"></script><script src="/app.js"></script>
+</body></html>
