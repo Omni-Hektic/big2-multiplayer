@@ -19,7 +19,7 @@ function renderState(s){state=s;if(s.code)roomCode=s.code;if(s.players?.some(p=>
  renderHand();
 }
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-$("quickMatch").onclick=()=>{const name=getName();inQueue=true;show("waiting");$("waitingTitle").textContent="Finding your table…";$("waitingText").textContent="You’ll be seated as soon as four players are ready.";socket.emit("queue:join",{name});};
+$("quickMatch").onclick=()=>{const name=getName();inQueue=true;show("waiting");$("waitingTitle").textContent="Finding your table…";$("waitingText").textContent="Looking for players. If fewer than four are found, the game starts after 20 seconds with at least two.";socket.emit("queue:join",{name});};
 $("cancelQueue").onclick=()=>{socket.emit("queue:leave");inQueue=false;show("home");};
 $("createPrivate").onclick=()=>socket.emit("room:create",{name:getName()});
 $("showPrivate").onclick=()=> $("joinPrivate").classList.toggle("hidden");
@@ -34,8 +34,19 @@ $("rematch").onclick=()=>{socket.emit("game:rematch");selected.clear();if(state?
 $("backHome").onclick=()=>{socket.emit("room:leave");state=null;show("home");};
 $("rulesButton").onclick=()=>{previousView="game";show("rules");};
 $("closeRules").onclick=()=>show(previousView);
-socket.on("queue:count",d=>{if(inQueue)$("queueCount").textContent=Math.min(4,d.waiting||0);});
-socket.on("queue:joined",d=>{inQueue=true;$("waitingText").textContent=`You’re in the queue (position ${d.position}). Waiting for three more players.`;});
+socket.on("queue:count",d=>{
+  if(inQueue){
+    const count=Math.min(4,d.waiting||0);
+    $("queueCount").textContent=count;
+    $("waitingText").textContent=count>=4
+      ? "Four players found! Starting shortly…"
+      : count+" player"+(count===1?"":"s")+" found. If at least two are waiting, the game starts after 20 seconds.";
+  }
+});
+socket.on("queue:joined",d=>{
+  inQueue=true;
+  $("waitingText").textContent="You’re in the queue (position "+d.position+"). Waiting for more players; 2+ players can start after 20 seconds.";
+});
 socket.on("match:found",d=>{inQueue=false;roomCode=d.code;myPlayerId=socket.id;show("waiting");$("waitingTitle").textContent="Table found!";$("waitingText").textContent="Your match is ready. Dealing cards…";$("queueCount").textContent="4";});
 socket.on("room:created",d=>{roomCode=d.code;toast("Private room created. Share the code with friends.");});
 socket.on("game:state",renderState);

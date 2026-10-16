@@ -84,6 +84,8 @@ const queue = [];
 const socketToRoom = new Map();
 const disconnectTimers = new Map();
 const RECONNECT_GRACE_MS = 30000;
+const QUICK_MATCH_WAIT_MS = 20000;
+let partialMatchTimer = null;
 
 function cleanName(name) {
   return String(name || "Player").trim().replace(/[<>]/g, "").slice(0,18) || "Player";
@@ -118,6 +120,7 @@ function leaveQueue(socketId) {
   const i = queue.findIndex(x=>x.socketId===socketId);
   if (i >= 0) queue.splice(i,1);
   io.emit("queue:count", { waiting:queue.length });
+  schedulePartialMatch();
 }
 function makeRoom(mode, host) {
   let code;
@@ -140,21 +143,40 @@ function beginGame(room) {
   room.currentPlayerId = starter.id; room.mustContainThreeD = true; room.message = `${starter.name} has the 3♦ and starts.`;
   emitState(room);
 }
-function matchQueue() {
-  while (queue.length >= 4) {
-    const group = queue.splice(0,4);
-    const unique = group.filter((entry,i,arr)=>arr.findIndex(x=>x.playerId===entry.playerId)===i);
-    if (unique.length < 4) { queue.unshift(...unique); break; }
-    const players = unique.map(x=>({id:x.playerId,name:x.name,socketId:x.socketId,hand:[],connected:true}));
-    const room = makeRoom("public",players[0]);
-    room.players = players; room.hostId = null;
-    players.forEach(p=>socketToRoom.set(p.socketId,room.code));
-    room.phase="countdown"; room.message="Match found! Starting in 3 seconds…";
-    players.forEach(p=>io.to(p.socketId).emit("match:found",{code:room.code,players:players.map(q=>({id:q.id,name:q.name}))}));
-    roomBroadcast(room,"game:state", { ...publicRoom(room, ""), hand:[], countdown:3 });
-    setTimeout(()=> { if (rooms.has(room.code) && room.phase==="countdown") beginGame(room); },3000);
+function startPublicMatch(group) {
+  const unique = group.filter((entry,i,arr)=>arr.findIndex(x=>x.playerId===entry.playerId)===i);
+  if (unique.length < 2) { queue.unshift(...unique); return; }
+  const players = unique.map(x=>({id:x.playerId,name:x.name,socketId:x.socketId,hand:[],connected:true}));
+  const room = makeRoom("public",players[0]);
+  room.players = players; room.hostId = null;
+  players.forEach(p=>socketToRoom.set(p.socketId,room.code));
+  room.phase="countdown";
+  room.message = players.length < 4 ? "Starting with " + players.length + " players after waiting." : "Match found! Starting in 3 seconds…";
+  players.forEach(p=>io.to(p.socketId).emit("match:found",{code:room.code,players:players.map(q=>({id:q.id,name:q.name}))}));
+  roomBroadcast(room,"game:state", { ...publicRoom(room, ""), hand:[], countdown:3 });
+  setTimeout(()=> { if (rooms.has(room.code) && room.phase==="countdown") beginGame(room); },3000);
+}
+function schedulePartialMatch() {
+  if (queue.length === 0) {
+    if (partialMatchTimer) clearTimeout(partialMatchTimer);
+    partialMatchTimer = null;
+    return;
   }
+  if (partialMatchTimer) return;
+  partialMatchTimer = setTimeout(() => {
+    partialMatchTimer = null;
+    if (queue.length >= 2) {
+      startPublicMatch(queue.splice(0, Math.min(4, queue.length)));
+      matchQueue();
+    } else {
+      schedulePartialMatch();
+    }
+  }, QUICK_MATCH_WAIT_MS);
+}
+function matchQueue() {
+  while (queue.length >= 4) startPublicMatch(queue.splice(0,4));
   io.emit("queue:count",{waiting:queue.length});
+  schedulePartialMatch();
 }
 function detachFromRoom(socket, intentional=false) {
   const code = socketToRoom.get(socket.id);
